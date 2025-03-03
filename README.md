@@ -1,5 +1,5 @@
 # Crestron-Stewart-CVM
-Crestron SIMPLE+ Module for controlling a Stewart CVM controller via IP or RS232
+Crestron SIMPLE+ Module for controlling a [Stewart CVM controller](https://www.stewartfilmscreen.com/Files/files/Support%20Material/Controls/CVM.pdf) via IP or RS232
 
 ### Installation
 
