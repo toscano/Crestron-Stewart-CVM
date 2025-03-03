@@ -1,0 +1,279 @@
+/*******************************************************************************************
+  SIMPL+ Module Information
+  (Fill in comments below)
+*******************************************************************************************/
+/*
+Dealer Name:
+System Name:
+System Number:
+Programmer:
+Comments:
+*/
+
+/*******************************************************************************************
+  Compiler Directives
+  (Uncomment and declare compiler directives as needed)
+*******************************************************************************************/
+#DEFINE_CONSTANT debug 0
+#DEFINE_CONSTANT DELIMITER "\r"
+#DEFINE_CONSTANT NAME_LEN 20
+#DEFINE_CONSTANT SAFETY "SAFETY"
+// #ENABLE_DYNAMIC
+// #SYMBOL_NAME ""
+// #HINT ""
+// #DEFINE_CONSTANT
+// #CATEGORY "" 
+// #PRINT_TO_TRACE
+// #DIGITAL_EXPAND 
+// #ANALOG_SERIAL_EXPAND 
+// #OUTPUT_SHIFT 
+// #HELP_PDF_FILE ""
+#DEFAULT_VOLATILE
+#ENABLE_STACK_CHECKING
+#ENABLE_TRACE
+// #ENCODING_ASCII
+// #ENCODING_UTF16
+// #ENCODING_INHERIT_FROM_PARENT
+// #ENCODING_INHERIT_FROM_PROGRAM
+/*
+#HELP_BEGIN
+   (add additional lines of help lines)
+#HELP_END
+*/
+
+/*******************************************************************************************
+  Include Libraries
+  (Uncomment and include additional libraries as needed)
+*******************************************************************************************/
+// #CRESTRON_LIBRARY ""
+// #USER_LIBRARY ""
+
+/*******************************************************************************************
+  DIGITAL, ANALOG and SERIAL INPUTS and OUTPUTS
+  (Uncomment and declare inputs and outputs as needed)
+*******************************************************************************************/
+DIGITAL_INPUT _SKIP_,_SKIP_, Connected, _SKIP_, 
+              Motor_1_Left, Motor_1_Stop, Motor_1_Right,
+              _SKIP_,
+              Motor_2_Left, Motor_2_Stop, Motor_2_Right,
+              _SKIP_, RecallByName,
+              _SKIP_,
+              Recall[24], _SKIP_, Store[24,24];
+
+STRING_INPUT _SKIP_, TargetName$[NAME_LEN], _SKIP_, RX$[200];
+
+// ANALOG_INPUT 
+// BUFFER_INPUT 
+
+DIGITAL_OUTPUT _SKIP_,_SKIP_,_SKIP_,_SKIP_,
+			   _SKIP_,_SKIP_,_SKIP_,
+			   _SKIP_,
+			   _SKIP_,_SKIP_,_SKIP_,
+			   _SKIP_,_SKIP_,
+			   _SKIP_,
+			   Feedback[24,24];	
+
+STRING_OUTPUT _SKIP_,_SKIP_,_SKIP_, 
+              _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,
+              _SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,_SKIP_,
+              _SKIP_,_SKIP_,_SKIP_,
+              ActiveName$,
+              _SKIP_,
+              TX$;
+// ANALOG_OUTPUT 
+
+
+/*******************************************************************************************
+  Parameters
+  (Uncomment and declare parameters as needed)
+*******************************************************************************************/
+// INTEGER_PARAMETER
+// SIGNED_INTEGER_PARAMETER
+// LONG_INTEGER_PARAMETER
+// SIGNED_LONG_INTEGER_PARAMETER
+STRING_PARAMETER user[30], password[30], _SKIP_, _SKIP_,  _SKIP_, _SKIP_,_SKIP_,_SKIP_,
+                 _SKIP_, _SKIP_,  _SKIP_, _SKIP_, _SKIP_, _SKIP_, nameMatch[24,24][NAME_LEN];
+
+/*******************************************************************************************
+  Parameter Properties
+  (Uncomment and declare parameter properties as needed)
+*******************************************************************************************/
+/*
+#BEGIN_PARAMETER_PROPERTIES parameter_variable, parameter_variable, ...
+   // propValidUnits = // unitString or unitDecimal|unitHex|unitPercent|unitCharacter|unitTime|unitTicks;
+   // propDefaultUnit = // unitString, unitDecimal, unitHex, unitPercent, unitCharacter, unitTime or unitTicks;
+   // propBounds = lower_bound , upper_bound;
+   // propDefaultValue = ;  // or, propDefaultValue = "";
+   // propList = // { "value" , "label" } , { "value" , "label" } , ... ;
+   // propShortDescription = "status_bar_hint_text";
+   // #BEGIN_PROP_FULL_DESCRIPTION  line_1...  line_2...  line_n  #END_PROP_FULL_DESCRIPTION
+   // #BEGIN_PROP_NOTES line_1...  line_2...  line_n  #END_PROP_NOTES
+#END_PARAMETER_PROPERTIES
+*/
+
+
+/*******************************************************************************************
+  Functions
+  (Add any additional functions here)
+  Note:  Functions must be physically placed before the location in
+         the code that calls them.
+*******************************************************************************************/
+
+function RecallByIndex(integer x)
+{
+  STRING sTx[200];
+  integer i;
+
+  if (Connected)
+  {
+    MAKESTRING(sTx, "#1.1.0.MOTOR=RECALL,%d%s", x, DELIMITER);
+
+    if (debug)
+      print("%s", sTx);
+
+    TX$ = sTx;
+    ActiveName$ = nameMatch[x];
+	
+	for(i=1 to 24)
+    {
+       if (i=x)
+          Feedback[i]=1;
+       else
+          Feedback[i]=0;     
+    }
+  }
+}
+
+function StoreByIndex(integer x)
+{
+  STRING sTx[200];
+
+  if (Connected)
+  {
+    MAKESTRING(sTx, "#1.1.0.MOTOR=STORE,%d%s", x, DELIMITER);
+
+    if (debug)
+      print("%s", sTx);
+      
+    TX$ = sTx;
+  }
+}
+
+/*******************************************************************************************
+  Event Handlers
+  (Uncomment and declare additional event handlers as needed)
+*******************************************************************************************/
+CHANGE RX$
+{
+  if (debug)
+    print("->'%s' - (%d)\n", RX$, len(RX$));
+
+  if (find("User:", RX$) > 0)
+    MAKESTRING( TX$, "%s%s", user,DELIMITER);
+  else if (find("Password:", RX$) > 0)
+    MAKESTRING( TX$, "%s%s", password,DELIMITER);
+  else if (find("Connected:", RX$) > 0)
+  {
+    if (debug)
+      print("Authenticated!\n");
+  } 
+}
+
+PUSH Motor_1_Left
+{
+  if (Connected)
+  { 
+    MAKESTRING( TX$, "#1.1.1.MOTOR=UP;%s", DELIMITER);
+  }
+}
+
+PUSH Motor_1_Stop
+{
+  if (Connected)
+  { 
+    MAKESTRING( TX$, "#1.1.1.MOTOR=STOP;%s", DELIMITER);
+  }
+}
+
+PUSH Motor_1_Right
+{
+  if (Connected)
+  { 
+    MAKESTRING( TX$, "#1.1.1.MOTOR=DOWN;%s", DELIMITER);
+  }
+}
+ 
+PUSH Motor_2_Left
+{
+  if (Connected)
+  { 
+    MAKESTRING( TX$, "#1.1.2.MOTOR=UP;%s", DELIMITER);
+  }
+}
+
+PUSH Motor_2_Stop
+{
+  if (Connected)
+  { 
+    MAKESTRING( TX$, "#1.1.2.MOTOR=STOP;%s", DELIMITER);
+  }
+}
+
+PUSH Motor_2_Right
+{
+  if (Connected)
+  { 
+    MAKESTRING( TX$, "#1.1.2.MOTOR=DOWN;%s", DELIMITER);
+  }
+}
+
+PUSH RecallByName
+{
+    integer i;
+    if (Connected)
+    { 
+      for(i=1 to 24)
+      {  
+        if (TargetName$=nameMatch[i])
+        {
+          RecallByIndex(i);
+          Return;
+        }
+      }
+
+      for(i=1 to 24)
+      {  
+        if (nameMatch[i]= SAFETY)
+        {
+          RecallByIndex(i);
+          Return;
+        }
+      }
+    }
+}
+
+PUSH Recall
+{
+  integer index;
+  if (Connected)
+  { 
+    index = GetLastModifiedArrayIndex();
+    RecallByIndex(index);
+  }
+}
+
+PUSH Store
+{
+  integer index;
+  if (Connected)
+  { 
+    index = GetLastModifiedArrayIndex();
+    StoreByIndex(index);
+  }
+}
+
+// Main
+Function Main()
+{
+    WaitForInitializationComplete();
+}
